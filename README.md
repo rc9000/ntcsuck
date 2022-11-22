@@ -12,4 +12,4 @@ Ansible playbook proof-of-concept to fetch mac address tables, parse them with n
     ansible-galaxy role install ansible-network.network-engine
     netdisco-do getapikey -e admin > api_key.txt
     
-    ansible-playbook  -k -i inventory-lab2.yml  -l "192.168.*"  pb.yml
+    ansible-playbook  -k -i inventory  -l "192.168.*"  pb.yml
