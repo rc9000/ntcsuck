@@ -1,0 +1,10 @@
+# simplified textfsm for show mac address-table on IOS xe
+# only fetch Gi... entries (to make translation from short to long name trivial)
+# don't care much about errors and complete exhaustion of the input
+Value vlan (\S+)
+Value mac (\S+)
+Value port (Gi1/0/\S+)
+
+Start
+  ^Vlan\s+Mac\s+Address\s+Type\s+Ports -> Continue
+  ^\s+${vlan}\s+${mac}\s+\S+\s+${port} -> Record

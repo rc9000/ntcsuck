@@ -1,0 +1,53 @@
+- name: POC ntc-templates macsuck
+  hosts: all
+  vars:
+    # from netdisco-do getapikey -e admin, file is a single line with the key
+    api_key: "{{lookup('file', 'api_key.txt')}}"
+    url_base: http://localhost:5005/netdisco
+    dump_data: True
+  gather_facts: false
+  tasks:
+    - name: Gather
+      cisco.ios.ios_facts:
+        gather_subset:
+          - min
+          #- interfaces
+
+    - name: Show
+      ios_command:
+        commands:
+          - show mac address-table
+      register: tbl
+
+    - name: TextFSM parse
+      set_fact:
+        data: "{{  tbl.stdout[0] | parse_cli_textfsm('netdisco_iosxe_macsuck.textfsm') }}"
+
+    - name: TextFSM output
+      debug:
+        var: data
+      when: dump_data == True
+
+    - set_fact:
+        putdata: |
+          {%- set list = [] -%}
+          {%- for d in data -%}
+            {{ list.append({ 'port': d.port | regex_replace('^Gi', 'GigabitEthernet'), 'mac': d.mac, 'vlan': d.vlan  })  }}
+          {%- endfor -%}
+          {{ list }}
+
+    - name: Payload dump
+      debug:
+        var: putdata
+      when: dump_data == True
+ 
+    - name: Netdisco API PUT
+      ansible.builtin.uri:
+        url: "{{url_base}}/api/v1/object/device/{{inventory_hostname}}/nodes?enqueue=false"
+        method: PUT
+        body: "{{putdata}}"
+        status_code: 200
+        body_format: json
+        headers:
+          Authorization: "{{api_key}}"
+          accept: application/json
